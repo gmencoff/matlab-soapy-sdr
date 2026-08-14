@@ -4,7 +4,8 @@ project(MatlabTestSoapyModule LANGUAGES CXX)
 find_package(SoapySDR CONFIG REQUIRED)
 
 add_library(matlabTestDevice MODULE MatlabTestDevice.cpp)
-target_link_libraries(matlabTestDevice PRIVATE SoapySDR::SoapySDR)
+target_include_directories(matlabTestDevice PRIVATE ${SoapySDR_INCLUDE_DIRS})
+target_link_libraries(matlabTestDevice PRIVATE ${SoapySDR_LIBRARIES})
 
 set_target_properties(matlabTestDevice PROPERTIES
     PREFIX "lib"
