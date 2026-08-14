@@ -42,7 +42,7 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
-            addpath('buildtools'); buildMex(VcpkgRoot="${{ env.VCPKG_ROOT }}")
+            addpath('buildtools'); buildMex(InstalledDir="${{ github.workspace }}/vcpkg_installed")
 
       - name: Configure Soapy plugin path
         run: |

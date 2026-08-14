@@ -1,15 +1,15 @@
 function buildMex(options)
 %BUILDMEX Build the soapysdr_mex MEX file against vcpkg SoapySDR.
-%   buildtools.buildMex() builds using the default vcpkg root and
-%   triplet.
+%   buildMex() builds using the default vcpkg installed directory
+%   (vcpkg_installed/ in the repo root) and triplet.
 %
-%   buildtools.buildMex(VcpkgRoot="path") specifies the vcpkg root.
+%   buildMex(InstalledDir="path") specifies the vcpkg installed tree.
 %
-%   buildtools.buildMex(Triplet="x64-windows") specifies the triplet.
+%   buildMex(Triplet="x64-windows") specifies the triplet.
 
     arguments
-        options.VcpkgRoot string {mustBeTextScalar} = ...
-            defaultVcpkgRoot()
+        options.InstalledDir string {mustBeTextScalar} = ...
+            defaultInstalledDir()
         options.Triplet string {mustBeTextScalar} = ...
             "x64-windows"
     end
@@ -18,10 +18,9 @@ function buildMex(options)
     srcFile = fullfile(repoRoot, "src", "soapysdr_mex.cpp");
     outputDir = fullfile(repoRoot, "+soapysdr", "+internal");
 
-    installedDir = fullfile(options.VcpkgRoot, "installed", ...
-        options.Triplet);
-    includeDir = fullfile(installedDir, "include");
-    libDir = fullfile(installedDir, "lib");
+    tripletDir = fullfile(options.InstalledDir, options.Triplet);
+    includeDir = fullfile(tripletDir, "include");
+    libDir = fullfile(tripletDir, "lib");
 
     validateDependencies(srcFile, includeDir, libDir);
 
@@ -42,12 +41,13 @@ function buildMex(options)
 
 end
 
-function root = defaultVcpkgRoot()
-    root = getenv("VCPKG_ROOT");
-    if root == ""
-        error("soapysdr:build:NoVcpkgRoot", ...
-            "VCPKG_ROOT environment variable is not set. " + ...
-            "Set it or pass VcpkgRoot explicitly.");
+function dir = defaultInstalledDir()
+    repoRoot = fileparts(fileparts(mfilename("fullpath")));
+    dir = fullfile(repoRoot, "vcpkg_installed");
+    if ~isfolder(dir)
+        error("soapysdr:build:NoInstalledDir", ...
+            "vcpkg_installed directory not found at: %s\n" + ...
+            "Run vcpkg install first.", dir);
     end
 end
 
