@@ -1,1 +1,8 @@
+# Matlab autosave files
 .asv
+
+# MATLAB MEX binaries
+*.mexw64
+*.mexa64
+*.mexmaca64
+*.mexmaci64
