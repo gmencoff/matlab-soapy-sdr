@@ -1,0 +1,57 @@
+name: Windows CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    env:
+      VCPKG_ROOT: C:\vcpkg
+      TRIPLET: x64-windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: a2b75031b909a2d6b051725c3909230c72d4bd4a
+
+      - name: Install vcpkg dependencies
+        run: vcpkg install --triplet ${{ env.TRIPLET }}
+
+      - name: Build fake Soapy module
+        run: |
+          cmake -B build/test-driver -S test/soapy `
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=${{ env.TRIPLET }} `
+            -DVCPKG_INSTALLED_DIR="${{ github.workspace }}/vcpkg_installed" `
+            -DVCPKG_MANIFEST_DIR="${{ github.workspace }}"
+          cmake --build build/test-driver --config Release
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2026a
+
+      - name: Build MEX
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath('buildtools'); buildMex(InstalledDir="${{ github.workspace }}/vcpkg_installed")
+
+      - name: Configure runtime paths
+        run: |
+          echo "SOAPY_SDR_PLUGIN_PATH=${{ github.workspace }}\build\test-driver\Release" >> $env:GITHUB_ENV
+          echo "${{ github.workspace }}\vcpkg_installed\x64-windows\bin" >> $env:GITHUB_PATH
+
+      - name: Run MATLAB tests
+        uses: matlab-actions/run-tests@v2
+        with:
+          source-folder: .
+          test-results-junit: results/test-results.xml
+          select-by-folder: test/matlab

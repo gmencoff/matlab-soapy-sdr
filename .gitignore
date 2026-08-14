@@ -1,1 +1,18 @@
-.asv
+# Matlab autosave files
+*.asv
+
+# MATLAB MEX binaries
+*.mexw64
+*.mexa64
+*.mexmaca64
+*.mexmaci64
+
+# Native build output
+build/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# vcpkg generated install state
+vcpkg_installed/
