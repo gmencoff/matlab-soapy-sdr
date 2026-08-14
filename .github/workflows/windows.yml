@@ -28,7 +28,9 @@ jobs:
         run: |
           cmake -B build/test-driver -S test/soapy `
             -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=${{ env.TRIPLET }}
+            -DVCPKG_TARGET_TRIPLET=${{ env.TRIPLET }} `
+            -DVCPKG_INSTALLED_DIR="${{ github.workspace }}/vcpkg_installed" `
+            -DVCPKG_MANIFEST_DIR="${{ github.workspace }}"
           cmake --build build/test-driver --config Release
 
       - name: Set up MATLAB
