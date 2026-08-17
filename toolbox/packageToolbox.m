@@ -28,25 +28,26 @@ function mltbxFile = packageToolbox(options)
         outputDir = options.OutputDir;
     end
 
-    toolboxFolder = fullfile(repoRoot, "+soapysdr");
-    mexFile = fullfile(toolboxFolder, "+internal", "soapysdr_mex." + mexext);
+    packageFolder = fullfile(repoRoot, "+soapysdr");
+    mexFile = fullfile(packageFolder, "+internal", "soapysdr_mex." + mexext);
     if ~isfile(mexFile)
         error("soapysdr:package:MissingMex", ...
             "MEX binary not found: %s\nRun buildtool mex first.", mexFile);
     end
 
-    opts = matlab.addons.toolbox.ToolboxOptions(toolboxFolder, meta.UUID);
+    opts = matlab.addons.toolbox.ToolboxOptions(repoRoot, meta.UUID);
     opts.ToolboxName = meta.ToolboxName;
     opts.ToolboxVersion = version;
     opts.Summary = meta.Summary;
     opts.Description = meta.Summary;
     opts.MinimumMatlabRelease = meta.MinimumMatlabRelease;
-    opts.ToolboxMatlabPath = repoRoot;
 
+    toolboxFiles = string(packageFolder);
     licenseFile = fullfile(repoRoot, "LICENSE");
     if isfile(licenseFile)
-        opts.ToolboxFiles = [string(toolboxFolder); string(licenseFile)];
+        toolboxFiles = [toolboxFiles; string(licenseFile)];
     end
+    opts.ToolboxFiles = toolboxFiles;
 
     if ~isfolder(outputDir)
         mkdir(outputDir);
