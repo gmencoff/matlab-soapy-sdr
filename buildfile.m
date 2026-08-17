@@ -46,6 +46,7 @@ function testTask(~)
     import matlab.unittest.plugins.XMLPlugin
 
     repoRoot = pwd;
+    addpath(repoRoot);
     suite = TestSuite.fromFolder(fullfile(repoRoot, "test", "matlab"));
 
     runner = TestRunner.withTextOutput;
