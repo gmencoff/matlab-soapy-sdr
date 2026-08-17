@@ -16,3 +16,10 @@ cmake_install.cmake
 
 # vcpkg generated install state
 vcpkg_installed/
+
+# Toolbox packaging output
+artifacts/
+*.mltbx
+
+# MATLAB Build Tool
+.buildtool/
