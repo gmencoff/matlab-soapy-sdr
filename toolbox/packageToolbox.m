@@ -53,6 +53,7 @@ function mltbxFile = packageToolbox(options)
     opts.Summary = meta.Summary;
     opts.Description = meta.Summary;
     opts.MinimumMatlabRelease = meta.MinimumMatlabRelease;
+    opts.ToolboxMatlabPath = stagingDir;
 
     if ~isfolder(outputDir)
         mkdir(outputDir);
