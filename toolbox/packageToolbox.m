@@ -55,7 +55,8 @@ function mltbxFile = packageToolbox(options)
     outputFile = fullfile(outputDir, ...
         sprintf("SoapySDR-for-MATLAB-%s.mltbx", version));
 
-    matlab.addons.toolbox.packageToolbox(opts, outputFile);
+    opts.OutputFile = outputFile;
+    matlab.addons.toolbox.packageToolbox(opts);
 
     assert(isfile(outputFile), "soapysdr:package:OutputMissing", ...
         "Expected .mltbx not produced at: %s", outputFile);
