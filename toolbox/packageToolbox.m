@@ -35,19 +35,24 @@ function mltbxFile = packageToolbox(options)
             "MEX binary not found: %s\nRun buildtool mex first.", mexFile);
     end
 
-    opts = matlab.addons.toolbox.ToolboxOptions(repoRoot, meta.UUID);
+    stagingDir = fullfile(outputDir, "staging");
+    if isfolder(stagingDir)
+        rmdir(stagingDir, "s");
+    end
+    mkdir(stagingDir);
+
+    copyfile(packageFolder, fullfile(stagingDir, "+soapysdr"));
+    licenseFile = fullfile(repoRoot, "LICENSE");
+    if isfile(licenseFile)
+        copyfile(licenseFile, stagingDir);
+    end
+
+    opts = matlab.addons.toolbox.ToolboxOptions(stagingDir, meta.UUID);
     opts.ToolboxName = meta.ToolboxName;
     opts.ToolboxVersion = version;
     opts.Summary = meta.Summary;
     opts.Description = meta.Summary;
     opts.MinimumMatlabRelease = meta.MinimumMatlabRelease;
-
-    toolboxFiles = string(packageFolder);
-    licenseFile = fullfile(repoRoot, "LICENSE");
-    if isfile(licenseFile)
-        toolboxFiles = [toolboxFiles; string(licenseFile)];
-    end
-    opts.ToolboxFiles = toolboxFiles;
 
     if ~isfolder(outputDir)
         mkdir(outputDir);
@@ -58,6 +63,8 @@ function mltbxFile = packageToolbox(options)
 
     opts.OutputFile = outputFile;
     matlab.addons.toolbox.packageToolbox(opts);
+
+    rmdir(stagingDir, "s");
 
     assert(isfile(outputFile), "soapysdr:package:OutputMissing", ...
         "Expected .mltbx not produced at: %s", outputFile);
