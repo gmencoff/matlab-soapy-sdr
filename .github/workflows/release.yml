@@ -81,7 +81,7 @@ jobs:
         env:
           TOOLBOX_VERSION: ${{ steps.version.outputs.version }}
         with:
-          command: buildtool smokeTest
+          command: run('toolbox/smokeTest.m')
 
       - name: Upload artifact
         if: github.event_name == 'push' && steps.version.outputs.is_release == 'false'
