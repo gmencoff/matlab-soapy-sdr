@@ -26,6 +26,7 @@ function smokeTest()
     disp(tbx);
 
     rehash toolboxcache
+    rehash path
 
     pathAfterInstall = strsplit(path, pathsep);
     toolboxPathEntries = pathAfterInstall(contains(pathAfterInstall, "soapysdr", IgnoreCase=true));
