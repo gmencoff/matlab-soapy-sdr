@@ -3,7 +3,7 @@ function smokeTest()
 %   Installs the toolbox, verifies MEX loads, runs zero-device enumerate,
 %   checks version metadata, then uninstalls.
 
-    repoRoot = pwd;
+    repoRoot = fileparts(fileparts(mfilename("fullpath")));
     artifactsDir = fullfile(repoRoot, "artifacts");
 
     mltbxFiles = dir(fullfile(artifactsDir, "*.mltbx"));
