@@ -22,6 +22,20 @@ function smokeTest()
     cleanupObj = onCleanup(@() uninstallAndRestorePath(tbx, entriesToRemove)); %#ok<NASGU>
 
     fprintf("Installed: %s v%s\n", tbx.Name, tbx.Version);
+    fprintf("Toolbox install path: %s\n", tbx.InstalledLocation);
+
+    rehash toolboxcache
+
+    pathAfterInstall = strsplit(path, pathsep);
+    toolboxPathEntries = pathAfterInstall(contains(pathAfterInstall, "soapysdr", IgnoreCase=true));
+    fprintf("Path entries containing 'soapysdr' after install:\n");
+    for i = 1:numel(toolboxPathEntries)
+        fprintf("  %s\n", toolboxPathEntries{i});
+    end
+    if isempty(toolboxPathEntries)
+        fprintf("  (none found)\n");
+        fprintf("Full MATLAB path:\n%s\n", path);
+    end
 
     expectedVersion = getenv("TOOLBOX_VERSION");
     if ~isempty(expectedVersion) && strlength(expectedVersion) > 0
