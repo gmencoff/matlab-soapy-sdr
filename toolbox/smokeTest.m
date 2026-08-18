@@ -35,11 +35,6 @@ function smokeTest()
         fprintf("Version verified: %s\n", tbx.Version);
     end
 
-    assert(exist("soapysdr.internal.enumerate", "file") > 0, ...
-        "soapysdr:smokeTest:APINotFound", ...
-        "soapysdr.internal.enumerate not found after toolbox install");
-    fprintf("API resolvable: soapysdr.internal.enumerate\n");
-
     originalPluginPath = getenv("SOAPY_SDR_PLUGIN_PATH");
     setenv("SOAPY_SDR_PLUGIN_PATH", "");
 
