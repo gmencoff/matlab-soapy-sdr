@@ -26,7 +26,6 @@ function smokeTest()
     disp(tbx);
 
     rehash toolboxcache
-    rehash path
 
     pathAfterInstall = strsplit(path, pathsep);
     toolboxPathEntries = pathAfterInstall(contains(pathAfterInstall, "soapysdr", IgnoreCase=true));
@@ -37,6 +36,19 @@ function smokeTest()
     if isempty(toolboxPathEntries)
         fprintf("  (none found)\n");
         fprintf("Full MATLAB path:\n%s\n", path);
+    end
+
+    % Force MATLAB to recognize +package directories on the installed path
+    for i = 1:numel(toolboxPathEntries)
+        tbxDir = toolboxPathEntries{i};
+        fprintf("Contents of %s:\n", tbxDir);
+        d = dir(tbxDir);
+        for j = 1:numel(d)
+            if ~startsWith(d(j).name, ".")
+                fprintf("  %s\n", d(j).name);
+            end
+        end
+        addpath(tbxDir);
     end
 
     expectedVersion = getenv("TOOLBOX_VERSION");
