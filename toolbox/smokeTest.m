@@ -22,7 +22,8 @@ function smokeTest()
     cleanupObj = onCleanup(@() uninstallAndRestorePath(tbx, entriesToRemove)); %#ok<NASGU>
 
     fprintf("Installed: %s v%s\n", tbx.Name, tbx.Version);
-    fprintf("Toolbox install path: %s\n", tbx.InstalledLocation);
+    fprintf("Toolbox struct fields:\n");
+    disp(tbx);
 
     rehash toolboxcache
 
