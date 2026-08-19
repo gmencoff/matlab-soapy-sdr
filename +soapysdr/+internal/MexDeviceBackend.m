@@ -39,8 +39,9 @@ classdef MexDeviceBackend < soapysdr.internal.DeviceBackend
         end
 
         function result = getHardwareInfo(obj)
-            result = soapysdr.internal.soapysdr_mex( ...
+            raw = soapysdr.internal.soapysdr_mex( ...
                 "getHardwareInfo", obj.pHandleId);
+            result = soapysdr.internal.kwargsToDictionary(raw);
         end
     end
 

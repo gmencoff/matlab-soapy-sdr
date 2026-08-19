@@ -16,7 +16,7 @@ function devices = enumerate(mexInterface)
 
     raw = mexInterface.enumerate();
 
-    devices = cellfun(@(x) dictionary(x(:,1), x(:,2)), raw, ...
-        UniformOutput=false);
+    devices = cellfun(@(x) soapysdr.internal.kwargsToDictionary(x), ...
+        raw, UniformOutput=false);
 
 end

@@ -6,6 +6,7 @@
 #include <SoapySDR/Version.hpp>
 
 #include "conversions.hpp"
+#include "device_commands.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -105,6 +106,11 @@ private:
             [this](auto& out, auto& in, auto& f, auto& e) {
                 doUnmake(in, f, e);
             };
+
+        registerDeviceCommands(commandTable_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e) {
+                return getDevice(id, f, e);
+            });
     }
 
     void doEnumerate(ArgumentList& outputs, ArrayFactory& factory) {
