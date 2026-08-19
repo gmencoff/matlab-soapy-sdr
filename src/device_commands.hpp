@@ -768,7 +768,14 @@ inline void registerDeviceCommands(
             uint64_t id = toUint64(in[1]);
             std::string key = toStdString(in[2]);
             auto* dev = getDevice(id, f, e);
-            out[0] = argInfoToMatlab(f, dev->getSettingInfo(key));
+            SoapySDR::ArgInfoList infos = dev->getSettingInfo();
+            for (const auto& info : infos) {
+                if (info.key == key) {
+                    out[0] = argInfoToMatlab(f, info);
+                    return;
+                }
+            }
+            out[0] = argInfoToMatlab(f, SoapySDR::ArgInfo());
         };
 
     table["writeSetting"] =
@@ -805,8 +812,14 @@ inline void registerDeviceCommands(
             size_t ch = static_cast<size_t>(toUint64(in[3]));
             std::string key = toStdString(in[4]);
             auto* dev = getDevice(id, f, e);
-            out[0] = argInfoToMatlab(f,
-                dev->getSettingInfo(dir, ch, key));
+            SoapySDR::ArgInfoList infos = dev->getSettingInfo(dir, ch);
+            for (const auto& info : infos) {
+                if (info.key == key) {
+                    out[0] = argInfoToMatlab(f, info);
+                    return;
+                }
+            }
+            out[0] = argInfoToMatlab(f, SoapySDR::ArgInfo());
         };
 
     table["writeChannelSetting"] =
