@@ -713,7 +713,7 @@ end
 function [backend] = parseConstructorArgs(varargin)
 %PARSECONSTRUCTORARGS Parse Device constructor arguments.
 
-    beidx = find(cellfun(@(X)strcmp(X,'BackendConstructor'),varargin));
+    beidx = find(cellfun(@(x) (ischar(x) || (isstring(x) && isscalar(x))) && strcmp(string(x), "BackendConstructor"), varargin), 1);
     beInjected = ~isempty(beidx);
     if beInjected
         args = [varargin(1:beidx-1),varargin(beidx+2:end)];
