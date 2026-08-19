@@ -52,10 +52,12 @@ inline SoapySDR::Kwargs toKwargs(const Array& arr) {
         return kwargs;
     }
     StringArray strArr = arr;
-    size_t numKeys = strArr.getDimensions()[0];
-    for (size_t i = 0; i < numKeys; i++) {
-        std::string key = toStdString(strArr, i * 2);
-        std::string val = toStdString(strArr, i * 2 + 1);
+    size_t numRows = strArr.getDimensions()[0];
+    for (size_t i = 0; i < numRows; i++) {
+        std::u16string u16key = strArr[i][0];
+        std::u16string u16val = strArr[i][1];
+        std::string key(u16key.begin(), u16key.end());
+        std::string val(u16val.begin(), u16val.end());
         kwargs[key] = val;
     }
     return kwargs;
