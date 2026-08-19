@@ -23,6 +23,15 @@ public:
 
         if (command == "enumerate") {
             outputs[0] = doEnumerate(factory);
+        } else if (command == "getAPIVersion") {
+            outputs[0] = factory.createScalar(
+                std::string(SoapySDR_getAPIVersion()));
+        } else if (command == "getABIVersion") {
+            outputs[0] = factory.createScalar(
+                std::string(SoapySDR_getABIVersion()));
+        } else if (command == "getLibVersion") {
+            outputs[0] = factory.createScalar(
+                std::string(SoapySDR_getLibVersion()));
         } else {
             throwError(engine, factory,
                 "soapysdr:mex:InvalidOperation",
