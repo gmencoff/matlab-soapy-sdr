@@ -32,13 +32,7 @@ classdef Device < handle
         %
         %   dev = soapysdr.Device(Backend=backend) injects a custom
         %   DeviceBackend for testing (not for public use).
-            [backend, kwargs] = parseConstructorArgs(varargin{:});
-            if ~isempty(backend)
-                obj.pBackend = backend;
-            else
-                obj.pBackend = ...
-                    soapysdr.internal.MexDeviceBackend(kwargs);
-            end
+            obj.pBackend = parseConstructorArgs(varargin{:});
         end
 
         function delete(obj)
@@ -77,33 +71,31 @@ classdef Device < handle
 
 end
 
-function [backend, kwargs] = parseConstructorArgs(varargin)
+function [backend] = parseConstructorArgs(varargin)
 %PARSECONSTRUCTORARGS Parse Device constructor arguments.
 %   Handles three forms:
 %     1. Device(dictionary)      — from enumerate result
 %     2. Device(key=val, ...)    — name-value pairs
 %     3. Device(Backend=backend) — dependency injection
 
-    backend = [];
-    kwargs = string.empty(0, 2);
-
-    if isempty(varargin)
-        error("soapysdr:Device:InvalidArgs", ...
-            "Device requires either a dictionary, " + ...
-            "name-value pairs, or a Backend argument.");
+    % Check for backend injection
+    beidx = find(cellfun(@(X)strcmp(X,'BackendConstructor'),varargin));
+    beInjected = ~isempty(beidx);
+    if beInjected
+        args = [varargin(1:beidx-1),varargin(beidx+2:end)];
+        backendFcn = varargin{beidx+1};
+    else
+        args = varargin;
     end
 
-    if numel(varargin) == 1 && isa(varargin{1}, "dictionary")
-        dict = varargin{1};
+    if ~isempty(args) && isscalar(args) && isa(args{1}, "dictionary")
+        dict = args{1};
         keys = dict.keys();
         values = dict.values();
         kwargs = [keys(:), values(:)];
-        return
-    end
-
-    if mod(numel(varargin), 2) == 0
-        names = varargin(1:2:end);
-        vals = varargin(2:2:end);
+    elseif ~isempty(args) && mod(numel(args), 2) == 0
+        names = args(1:2:end);
+        vals = args(2:2:end);
 
         backendIdx = find(strcmp(names, "Backend"), 1);
         if ~isempty(backendIdx)
@@ -116,10 +108,13 @@ function [backend, kwargs] = parseConstructorArgs(varargin)
             kwargs(i, 1) = string(names{i});
             kwargs(i, 2) = string(vals{i});
         end
-        return
+    else
+        kwargs = [];
     end
 
-    error("soapysdr:Device:InvalidArgs", ...
-        "Device requires either a dictionary, " + ...
-        "name-value pairs, or a Backend argument.");
+    if beInjected
+        backend = backendFcn(kwargs);
+    else
+        backend = soapysdr.internal.MexDeviceBackend(kwargs);
+    end
 end

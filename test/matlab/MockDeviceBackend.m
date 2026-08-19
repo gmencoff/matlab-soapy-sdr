@@ -7,26 +7,32 @@ classdef MockDeviceBackend < soapysdr.internal.DeviceBackend
         Calls cell = {}
         Returns struct = struct()
         DeleteCount (1,1) double = 0
+        ConstructorArgs
     end
 
     methods
+        function obj = setConstructorArgs(obj,kwargs)
+            obj.ConstructorArgs = kwargs;
+        end
+
         function delete(obj)
             obj.DeleteCount = obj.DeleteCount + 1;
         end
 
         function result = getDriverKey(obj)
             obj.Calls{end+1} = {"getDriverKey"};
-            result = getReturn(obj, "getDriverKey");
+            result = "mock_driver";
         end
 
         function result = getHardwareKey(obj)
             obj.Calls{end+1} = {"getHardwareKey"};
-            result = getReturn(obj, "getHardwareKey");
+            result =  "mock_hw";
         end
 
         function result = getHardwareInfo(obj)
             obj.Calls{end+1} = {"getHardwareInfo"};
-            result = getReturn(obj, "getHardwareInfo");
+            result = dictionary(["serial", "revision"], ...
+                           ["MOCK001", "v2"]);
         end
     end
 
