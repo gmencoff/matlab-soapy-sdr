@@ -237,11 +237,14 @@ inline void registerStreamCommands(
             auto* dev = getDevice(info.deviceId, f, e);
 
             TypedArray<int64_t> numElemsArr = in[3];
-            size_t numElems = static_cast<size_t>(numElemsArr[0]);
+            const int64_t rawNumElems = numElemsArr[0];
+            if (rawNumElems < 0) throw std::invalid_argument("numElems must be non-negative");
+            const size_t numElems = static_cast<size_t>(rawNumElems);
 
             TypedArray<int64_t> timeoutArr = in[4];
-            long timeoutUs = static_cast<long>(timeoutArr[0]);
-
+            const int64_t rawTimeoutUs = timeoutArr[0];
+            if (rawTimeoutUs < 0) throw std::invalid_argument("timeoutUs must be non-negative");
+            long timeoutUs = static_cast<long>(rawTimeoutUs);
             dispatchReadStream(out, f, dev, info, numElems, timeoutUs);
         };
 
