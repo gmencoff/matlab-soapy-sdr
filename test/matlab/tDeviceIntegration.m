@@ -37,14 +37,14 @@ classdef tDeviceIntegration < matlab.unittest.TestCase
         function deviceCanBeDeleted(testCase)
             dev = soapysdr.Device( ...
                 driver="matlab_test", serial="TEST002");
-            testCase.verifyWarningFree(delete(dev));
+            testCase.verifyWarningFree(@()delete(dev));
         end
 
         function doubleDeleteIsSafe(testCase)
             dev = soapysdr.Device( ...
                 driver="matlab_test", serial="TEST002");
-            testCase.verifyWarningFree(delete(dev));
-            testCase.verifyWarningFree(delete(dev));
+            testCase.verifyWarningFree(@()delete(dev));
+            testCase.verifyWarningFree(@()delete(dev));
         end
 
         function constructFromEnumerateResult(testCase)
