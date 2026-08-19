@@ -49,21 +49,40 @@ private:
 };
 
 static std::vector<SoapySDR::Kwargs> findMatlabTestDevices(
-        const SoapySDR::Kwargs&) {
-    std::vector<SoapySDR::Kwargs> results;
+        const SoapySDR::Kwargs& filter) {
+    std::vector<SoapySDR::Kwargs> allDevices;
 
     SoapySDR::Kwargs dev1;
     dev1["driver"] = "matlab_test";
     dev1["label"] = "MATLAB Test Device 1";
     dev1["serial"] = "TEST001";
-    results.push_back(dev1);
+    allDevices.push_back(dev1);
 
     SoapySDR::Kwargs dev2;
     dev2["driver"] = "matlab_test";
     dev2["label"] = "MATLAB Test Device 2";
     dev2["serial"] = "TEST002";
-    results.push_back(dev2);
+    allDevices.push_back(dev2);
 
+    if (filter.empty()) {
+        return allDevices;
+    }
+
+    std::vector<SoapySDR::Kwargs> results;
+    for (const auto& dev : allDevices) {
+        bool matches = true;
+        for (const auto& kv : filter) {
+            if (kv.first == "driver") continue;
+            auto it = dev.find(kv.first);
+            if (it == dev.end() || it->second != kv.second) {
+                matches = false;
+                break;
+            }
+        }
+        if (matches) {
+            results.push_back(dev);
+        }
+    }
     return results;
 }
 
