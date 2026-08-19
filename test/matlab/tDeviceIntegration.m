@@ -52,7 +52,7 @@ classdef tDeviceIntegration < matlab.unittest.TestCase
         end
 
         function constructFromEnumerateResult(testCase)
-            devices = soapysdr.enumerate();
+            devices = soapysdr.find();
             testDevices = devices(cellfun(@(d) ...
                 d.isKey("driver") && d("driver") == "matlab_test", ...
                 devices));

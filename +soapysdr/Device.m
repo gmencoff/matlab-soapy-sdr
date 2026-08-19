@@ -5,7 +5,7 @@ classdef Device < handle
 %   parameters such as frequency, gain, sample rate, and antennas.
 %
 %   CONSTRUCTION:
-%       devices = soapysdr.enumerate();
+%       devices = soapysdr.find();
 %       dev = soapysdr.Device(devices{1});
 %
 %       dev = soapysdr.Device(driver="rtlsdr");
@@ -15,7 +15,7 @@ classdef Device < handle
 %       - Channel indices are zero-based, matching SoapySDR convention.
 %       - Call delete(dev) to release the native device when done.
 %
-%   See also: soapysdr.enumerate
+%   See also: soapysdr.find
 
     properties (Access = private)
         pBackend
@@ -25,7 +25,7 @@ classdef Device < handle
         function obj = Device(varargin)
         %DEVICE Construct a Device from enumeration result or kwargs.
         %   dev = soapysdr.Device(devices{1}) constructs from a
-        %   dictionary returned by soapysdr.enumerate.
+        %   dictionary returned by soapysdr.find.
         %
         %   dev = soapysdr.Device(driver="rtlsdr") constructs using
         %   name-value pairs specifying device identification.
