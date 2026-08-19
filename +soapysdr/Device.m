@@ -47,7 +47,7 @@ classdef Device < handle
             if ~isempty(obj.pBackend)
                 obj.pBackend.delete();
                 obj.pBackend = ...
-                    soapysdr.internal.DeviceBackend.empty;
+                    [];
             end
         end
 
@@ -84,7 +84,7 @@ function [backend, kwargs] = parseConstructorArgs(varargin)
 %     2. Device(key=val, ...)    — name-value pairs
 %     3. Device(Backend=backend) — dependency injection
 
-    backend = soapysdr.internal.DeviceBackend.empty;
+    backend = [];
     kwargs = string.empty(0, 2);
 
     if isempty(varargin)
