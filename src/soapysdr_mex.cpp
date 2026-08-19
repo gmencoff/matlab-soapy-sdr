@@ -25,14 +25,22 @@ public:
 
     ~MexFunction() {
         for (auto& entry : streamRegistry_) {
-            auto devIt = deviceRegistry_.find(entry.second.deviceId);
-            if (devIt != deviceRegistry_.end()) {
-                devIt->second->closeStream(entry.second.stream);
+            try {
+                auto devIt = deviceRegistry_.find(entry.second.deviceId);
+                if (devIt != deviceRegistry_.end() && devIt->second != nullptr) {
+                    devIt->second->closeStream(entry.second.stream);
+                }
+            } catch (...) {
+                // Best-effort cleanup; never throw from destructor.
             }
         }
         streamRegistry_.clear();
         for (auto& entry : deviceRegistry_) {
-            SoapySDR::Device::unmake(entry.second);
+            try {
+                SoapySDR::Device::unmake(entry.second);
+            } catch (...) {
+                // Best-effort cleanup; never throw from destructor.
+            }
         }
         deviceRegistry_.clear();
     }
