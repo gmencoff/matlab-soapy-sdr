@@ -189,6 +189,30 @@ inline Array argInfoListToMatlab(
     return result;
 }
 
+// --- Stream format info ---
+
+struct FormatInfo {
+    ArrayType arrayType;
+    bool isComplex;
+    size_t elemBytes;
+};
+
+inline FormatInfo getFormatInfo(const std::string& format) {
+    if (format == "CF32") return {ArrayType::SINGLE, true, 8};
+    if (format == "CF64") return {ArrayType::DOUBLE, true, 16};
+    if (format == "CS32") return {ArrayType::INT32, true, 8};
+    if (format == "CS16") return {ArrayType::INT16, true, 4};
+    if (format == "CS8")  return {ArrayType::INT8, true, 2};
+    if (format == "CU16") return {ArrayType::UINT16, true, 4};
+    if (format == "CU8")  return {ArrayType::UINT8, true, 2};
+    if (format == "F32")  return {ArrayType::SINGLE, false, 4};
+    if (format == "F64")  return {ArrayType::DOUBLE, false, 8};
+    if (format == "S16")  return {ArrayType::INT16, false, 2};
+    if (format == "S8")   return {ArrayType::INT8, false, 1};
+    if (format == "U8")   return {ArrayType::UINT8, false, 1};
+    return {ArrayType::SINGLE, true, 8};
+}
+
 // --- Numeric conversions ---
 
 inline uint64_t toUint64(const Array& arr) {

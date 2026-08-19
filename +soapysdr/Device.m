@@ -613,6 +613,99 @@ classdef Device < handle
         %READUART Read data from a UART with timeout.
             result = obj.pBackend.readUART(which, timeoutUs);
         end
+
+        % --- Streaming ---
+
+        function streamHandle = setupStream(obj, direction, format, channels, args)
+        %SETUPSTREAM Initialize a stream for RX or TX.
+        %   h = dev.setupStream("RX", "CF32") opens channel 0.
+        %   h = dev.setupStream("RX", "CF32", [0 1]) opens channels.
+        %   h = dev.setupStream("RX", "CF32", 0, args) with kwargs.
+            if nargin < 4
+                channels = uint64(0);
+            end
+            if nargin < 5
+                args = dictionary;
+            end
+            streamHandle = obj.pBackend.setupStream(direction, format, channels, args);
+        end
+
+        function closeStream(obj, streamHandle)
+        %CLOSESTREAM Close an open stream and release resources.
+            obj.pBackend.closeStream(streamHandle);
+        end
+
+        function result = getStreamMTU(obj, streamHandle)
+        %GETSTREAMMTU Get the stream maximum transfer unit in elements.
+            result = obj.pBackend.getStreamMTU(streamHandle);
+        end
+
+        function activateStream(obj, streamHandle, flags, timeNs, numElems)
+        %ACTIVATESTREAM Activate a stream for I/O operations.
+        %   dev.activateStream(h) activates with defaults.
+        %   dev.activateStream(h, flags, timeNs, numElems) explicit.
+            if nargin < 3
+                flags = int32(0);
+            end
+            if nargin < 4
+                timeNs = int64(0);
+            end
+            if nargin < 5
+                numElems = int32(0);
+            end
+            obj.pBackend.activateStream(streamHandle, flags, timeNs, numElems);
+        end
+
+        function deactivateStream(obj, streamHandle, flags, timeNs)
+        %DEACTIVATESTREAM Deactivate a stream.
+        %   dev.deactivateStream(h) deactivates with defaults.
+        %   dev.deactivateStream(h, flags, timeNs) explicit.
+            if nargin < 3
+                flags = int32(0);
+            end
+            if nargin < 4
+                timeNs = int64(0);
+            end
+            obj.pBackend.deactivateStream(streamHandle, flags, timeNs);
+        end
+
+        function [data, numRead, flags, timeNs] = readStream(obj, streamHandle, numElems, timeoutUs)
+        %READSTREAM Read samples from an RX stream.
+        %   [data, numRead, flags, timeNs] = dev.readStream(h, 1024)
+        %   data is numElems x numChannels. numRead may be negative
+        %   (error code). See soapysdr.ErrorCode.
+            if nargin < 4
+                timeoutUs = int64(100000);
+            end
+            [data, numRead, flags, timeNs] = obj.pBackend.readStream(streamHandle, numElems, timeoutUs);
+        end
+
+        function numWritten = writeStream(obj, streamHandle, data, flags, timeNs, timeoutUs)
+        %WRITESTREAM Write samples to a TX stream.
+        %   numWritten = dev.writeStream(h, data)
+        %   numWritten = dev.writeStream(h, data, flags, timeNs, timeoutUs)
+        %   numWritten may be negative (error code).
+            if nargin < 4
+                flags = int32(0);
+            end
+            if nargin < 5
+                timeNs = int64(0);
+            end
+            if nargin < 6
+                timeoutUs = int64(100000);
+            end
+            numWritten = obj.pBackend.writeStream(streamHandle, data, flags, timeNs, timeoutUs);
+        end
+
+        function [ret, chanMask, flags, timeNs] = readStreamStatus(obj, streamHandle, timeoutUs)
+        %READSTREAMSTATUS Read stream status (non-blocking by default).
+        %   [ret, chanMask, flags, timeNs] = dev.readStreamStatus(h)
+        %   [ret, chanMask, flags, timeNs] = dev.readStreamStatus(h, timeoutUs)
+            if nargin < 3
+                timeoutUs = int64(0);
+            end
+            [ret, chanMask, flags, timeNs] = obj.pBackend.readStreamStatus(streamHandle, timeoutUs);
+        end
     end
 
 end

@@ -7,6 +7,7 @@
 
 #include "conversions.hpp"
 #include "device_commands.hpp"
+#include "stream_commands.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -23,6 +24,13 @@ public:
     }
 
     ~MexFunction() {
+        for (auto& entry : streamRegistry_) {
+            auto devIt = deviceRegistry_.find(entry.second.deviceId);
+            if (devIt != deviceRegistry_.end()) {
+                devIt->second->closeStream(entry.second.stream);
+            }
+        }
+        streamRegistry_.clear();
         for (auto& entry : deviceRegistry_) {
             SoapySDR::Device::unmake(entry.second);
         }
@@ -68,13 +76,11 @@ public:
     }
 
 private:
-    using EnginePtrT = std::shared_ptr<matlab::engine::MATLABEngine>;
-    using HandlerFn = std::function<void(
-        ArgumentList&, ArgumentList&, ArrayFactory&, EnginePtrT&)>;
-
     std::unordered_map<std::string, HandlerFn> commandTable_;
     std::unordered_map<uint64_t, SoapySDR::Device*> deviceRegistry_;
     uint64_t nextDeviceId_ = 1;
+    StreamRegistryT streamRegistry_;
+    uint64_t nextStreamId_ = 1;
 
     void initCommandTable() {
         commandTable_["enumerate"] =
@@ -110,6 +116,17 @@ private:
         registerDeviceCommands(commandTable_,
             [this](uint64_t id, ArrayFactory& f, EnginePtrT& e) {
                 return getDevice(id, f, e);
+            });
+
+        registerStreamCommands(commandTable_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e) {
+                return getDevice(id, f, e);
+            },
+            streamRegistry_,
+            nextStreamId_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e)
+                    -> StreamInfo& {
+                return getStream(id, f, e);
             });
     }
 
@@ -169,6 +186,17 @@ private:
                 "Invalid device handle.");
         }
 
+        // Close all streams belonging to this device
+        for (auto sIt = streamRegistry_.begin();
+                sIt != streamRegistry_.end(); ) {
+            if (sIt->second.deviceId == id) {
+                it->second->closeStream(sIt->second.stream);
+                sIt = streamRegistry_.erase(sIt);
+            } else {
+                ++sIt;
+            }
+        }
+
         SoapySDR::Device::unmake(it->second);
         deviceRegistry_.erase(it);
     }
@@ -182,6 +210,19 @@ private:
             throwError(engine, factory,
                 "soapysdr:InvalidDevice",
                 "Invalid device handle.");
+        }
+        return it->second;
+    }
+
+    StreamInfo& getStream(
+            uint64_t id,
+            ArrayFactory& factory,
+            EnginePtrT& engine) {
+        auto it = streamRegistry_.find(id);
+        if (it == streamRegistry_.end()) {
+            throwError(engine, factory,
+                "soapysdr:InvalidStream",
+                "Invalid stream handle.");
         }
         return it->second;
     }

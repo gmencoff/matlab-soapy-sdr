@@ -571,7 +571,111 @@ public:
         return gpioDir_;
     }
 
+    // --- Streaming ---
+
+    SoapySDR::Stream* setupStream(
+            const int direction,
+            const std::string& format,
+            const std::vector<size_t>& channels,
+            const SoapySDR::Kwargs&) override {
+        auto* state = new TestStreamState();
+        state->direction = direction;
+        state->format = format;
+        state->channels = channels.empty()
+            ? std::vector<size_t>{0} : channels;
+        state->active = false;
+        return reinterpret_cast<SoapySDR::Stream*>(state);
+    }
+
+    void closeStream(SoapySDR::Stream* stream) override {
+        auto* state = reinterpret_cast<TestStreamState*>(stream);
+        delete state;
+    }
+
+    size_t getStreamMTU(SoapySDR::Stream*) const override {
+        return 1024;
+    }
+
+    int activateStream(
+            SoapySDR::Stream* stream,
+            const int,
+            const long long,
+            const size_t) override {
+        auto* state = reinterpret_cast<TestStreamState*>(stream);
+        state->active = true;
+        return 0;
+    }
+
+    int deactivateStream(
+            SoapySDR::Stream* stream,
+            const int,
+            const long long) override {
+        auto* state = reinterpret_cast<TestStreamState*>(stream);
+        state->active = false;
+        return 0;
+    }
+
+    int readStream(
+            SoapySDR::Stream* stream,
+            void* const* buffs,
+            const size_t numElems,
+            int& flags,
+            long long& timeNs,
+            const long) override {
+        auto* state = reinterpret_cast<TestStreamState*>(stream);
+        flags = 0;
+        timeNs = 1000000;
+
+        for (size_t ch = 0; ch < state->channels.size(); ch++) {
+            if (state->format == "CF32") {
+                auto* buf = reinterpret_cast<
+                    std::complex<float>*>(buffs[ch]);
+                for (size_t i = 0; i < numElems; i++) {
+                    buf[i] = std::complex<float>(
+                        static_cast<float>(i + 1),
+                        static_cast<float>(-(int)(i + 1)));
+                }
+            } else if (state->format == "CS16") {
+                auto* buf = reinterpret_cast<int16_t*>(buffs[ch]);
+                for (size_t i = 0; i < numElems; i++) {
+                    buf[2 * i] = static_cast<int16_t>(i + 1);
+                    buf[2 * i + 1] = static_cast<int16_t>(
+                        -(int)(i + 1));
+                }
+            }
+        }
+        return static_cast<int>(numElems);
+    }
+
+    int writeStream(
+            SoapySDR::Stream*,
+            const void* const*,
+            const size_t numElems,
+            int&,
+            const long long,
+            const long) override {
+        return static_cast<int>(numElems);
+    }
+
+    int readStreamStatus(
+            SoapySDR::Stream*,
+            size_t& chanMask,
+            int& flags,
+            long long& timeNs,
+            const long) const override {
+        chanMask = 0;
+        flags = 0;
+        timeNs = 0;
+        return -1;
+    }
+
 private:
+    struct TestStreamState {
+        int direction;
+        std::string format;
+        std::vector<size_t> channels;
+        bool active;
+    };
     std::string serial_ = "UNKNOWN";
 
     // Channel state

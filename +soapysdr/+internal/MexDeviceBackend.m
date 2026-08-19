@@ -497,6 +497,45 @@ classdef MexDeviceBackend < soapysdr.internal.DeviceBackend
         function result = readUART(obj, which, timeoutUs)
             result = obj.mex("readUART", which, int64(timeoutUs));
         end
+
+        % --- Streaming ---
+
+        function streamHandle = setupStream(obj, direction, format, channels, args)
+            if isempty(args) || (isa(args, "dictionary") && args.numEntries == 0)
+                kwargs = strings(0, 2);
+            else
+                kwargs = [args.keys(:), args.values(:)];
+            end
+            streamHandle = soapysdr.internal.soapysdr_mex("setupStream", obj.pHandleId, direction, format, uint64(channels), kwargs);
+        end
+
+        function closeStream(obj, streamHandle)
+            obj.mex("closeStream", uint64(streamHandle));
+        end
+
+        function result = getStreamMTU(obj, streamHandle)
+            result = obj.mex("getStreamMTU", uint64(streamHandle));
+        end
+
+        function activateStream(obj, streamHandle, flags, timeNs, numElems)
+            obj.mex("activateStream", uint64(streamHandle), int32(flags), int64(timeNs), int32(numElems));
+        end
+
+        function deactivateStream(obj, streamHandle, flags, timeNs)
+            obj.mex("deactivateStream", uint64(streamHandle), int32(flags), int64(timeNs));
+        end
+
+        function [data, numRead, flags, timeNs] = readStream(obj, streamHandle, numElems, timeoutUs)
+            [data, numRead, flags, timeNs] = soapysdr.internal.soapysdr_mex("readStream", obj.pHandleId, uint64(streamHandle), int64(numElems), int64(timeoutUs));
+        end
+
+        function numWritten = writeStream(obj, streamHandle, data, flags, timeNs, timeoutUs)
+            numWritten = soapysdr.internal.soapysdr_mex("writeStream", obj.pHandleId, uint64(streamHandle), data, int32(flags), int64(timeNs), int64(timeoutUs));
+        end
+
+        function [ret, chanMask, flags, timeNs] = readStreamStatus(obj, streamHandle, timeoutUs)
+            [ret, chanMask, flags, timeNs] = soapysdr.internal.soapysdr_mex("readStreamStatus", obj.pHandleId, uint64(streamHandle), int64(timeoutUs));
+        end
     end
 
     methods (Access = private)

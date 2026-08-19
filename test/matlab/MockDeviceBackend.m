@@ -602,6 +602,53 @@ classdef MockDeviceBackend < soapysdr.internal.DeviceBackend
             obj.Calls{end+1} = {"readUART", which, timeoutUs};
             result = obj.getReturn("readUART");
         end
+
+        % --- Streaming ---
+
+        function streamHandle = setupStream(obj, direction, format, channels, args)
+            obj.Calls{end+1} = {"setupStream", direction, format, channels, args};
+            streamHandle = obj.getReturn("setupStream");
+        end
+
+        function closeStream(obj, streamHandle)
+            obj.Calls{end+1} = {"closeStream", streamHandle};
+        end
+
+        function result = getStreamMTU(obj, streamHandle)
+            obj.Calls{end+1} = {"getStreamMTU", streamHandle};
+            result = obj.getReturn("getStreamMTU");
+        end
+
+        function activateStream(obj, streamHandle, flags, timeNs, numElems)
+            obj.Calls{end+1} = {"activateStream", streamHandle, flags, timeNs, numElems};
+        end
+
+        function deactivateStream(obj, streamHandle, flags, timeNs)
+            obj.Calls{end+1} = {"deactivateStream", streamHandle, flags, timeNs};
+        end
+
+        function [data, numRead, flags, timeNs] = readStream(obj, streamHandle, numElems, timeoutUs)
+            obj.Calls{end+1} = {"readStream", streamHandle, numElems, timeoutUs};
+            r = obj.getReturn("readStream");
+            data = r{1};
+            numRead = r{2};
+            flags = r{3};
+            timeNs = r{4};
+        end
+
+        function numWritten = writeStream(obj, streamHandle, data, flags, timeNs, timeoutUs)
+            obj.Calls{end+1} = {"writeStream", streamHandle, data, flags, timeNs, timeoutUs};
+            numWritten = obj.getReturn("writeStream");
+        end
+
+        function [ret, chanMask, flags, timeNs] = readStreamStatus(obj, streamHandle, timeoutUs)
+            obj.Calls{end+1} = {"readStreamStatus", streamHandle, timeoutUs};
+            r = obj.getReturn("readStreamStatus");
+            ret = r{1};
+            chanMask = r{2};
+            flags = r{3};
+            timeNs = r{4};
+        end
     end
 
     methods (Access = private)

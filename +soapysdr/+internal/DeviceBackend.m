@@ -137,6 +137,16 @@ classdef (Abstract) DeviceBackend < handle
         result = listUARTs(obj)
         writeUART(obj, which, data)
         result = readUART(obj, which, timeoutUs)
+
+        % --- Streaming ---
+        streamHandle = setupStream(obj, direction, format, channels, args)
+        closeStream(obj, streamHandle)
+        result = getStreamMTU(obj, streamHandle)
+        activateStream(obj, streamHandle, flags, timeNs, numElems)
+        deactivateStream(obj, streamHandle, flags, timeNs)
+        [data, numRead, flags, timeNs] = readStream(obj, streamHandle, numElems, timeoutUs)
+        numWritten = writeStream(obj, streamHandle, data, flags, timeNs, timeoutUs)
+        [ret, chanMask, flags, timeNs] = readStreamStatus(obj, streamHandle, timeoutUs)
     end
 
 end
