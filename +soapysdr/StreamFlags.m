@@ -1,4 +1,4 @@
-classdef StreamFlags
+classdef (Hidden) StreamFlags
 %STREAMFLAGS Bitmask constants for SoapySDR stream operations.
 %   Combine flags with bitor:
 %       flags = bitor(soapysdr.StreamFlags.HAS_TIME, ...

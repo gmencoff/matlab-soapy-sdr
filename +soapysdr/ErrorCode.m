@@ -1,4 +1,4 @@
-classdef ErrorCode
+classdef (Hidden) ErrorCode
 %ERRORCODE Error code constants returned by SoapySDR stream operations.
 %   Check return values from readStream/writeStream against these:
 %       [data, numRead, flags, timeNs] = dev.readStream(h, 1024);

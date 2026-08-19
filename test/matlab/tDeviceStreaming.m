@@ -9,7 +9,7 @@ classdef tDeviceStreaming < matlab.unittest.TestCase
     methods (TestMethodSetup)
         function createDevice(testCase)
             testCase.Mock = MockDeviceBackend();
-            testCase.Dev = soapysdr.Device("Backend", testCase.Mock);
+            testCase.Dev = makeDevice(testCase);
         end
     end
 
@@ -263,6 +263,19 @@ classdef tDeviceStreaming < matlab.unittest.TestCase
             testCase.verifyEqual(soapysdr.ErrorCode.UNDERFLOW, int32(-5));
             testCase.verifyEqual(soapysdr.ErrorCode.NOT_SUPPORTED, int32(-6));
             testCase.verifyEqual(soapysdr.ErrorCode.TIME_ERROR, int32(-7));
+        end
+    end
+
+    methods (Access=private)
+        function be = ConstructMockBackend(testCase, kwargs)
+            testCase.Mock.setConstructorArgs(kwargs);
+            be = testCase.Mock;
+        end
+
+        function dev = makeDevice(testCase)
+            dev = soapysdr.Device( ...
+                BackendConstructor=@(kwargs) ...
+                testCase.ConstructMockBackend(kwargs));
         end
     end
 

@@ -1,4 +1,4 @@
-classdef Range
+classdef (Hidden) Range
 %RANGE Represents a numeric range with minimum, maximum, and step.
 %   A Range object holds the minimum, maximum, and step size for a
 %   SoapySDR parameter range (e.g., gain, frequency, sample rate).

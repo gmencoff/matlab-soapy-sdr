@@ -1,4 +1,4 @@
-classdef ArgInfo
+classdef (Hidden) ArgInfo
 %ARGINFO Metadata describing a device argument or setting.
 %   An ArgInfo object describes a configurable parameter exposed by a
 %   SoapySDR device driver, including its key, default value, human-
