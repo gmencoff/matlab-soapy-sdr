@@ -18,7 +18,7 @@ classdef Device < handle
 %   See also: soapysdr.enumerate
 
     properties (Access = private)
-        pBackend soapysdr.internal.DeviceBackend
+        pBackend
     end
 
     methods
