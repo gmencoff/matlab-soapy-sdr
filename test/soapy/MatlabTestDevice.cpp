@@ -662,7 +662,7 @@ public:
             size_t& chanMask,
             int& flags,
             long long& timeNs,
-            const long) const override {
+            const long) override {
         chanMask = 0;
         flags = 0;
         timeNs = 0;
