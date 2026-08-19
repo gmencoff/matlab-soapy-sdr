@@ -1,10 +1,17 @@
 #include "mex.hpp"
 #include "mexAdapter.hpp"
 
-#include <SoapySDR/Device.h>
-#include <SoapySDR/Version.h>
+#include <SoapySDR/Device.hpp>
+#include <SoapySDR/Types.hpp>
+#include <SoapySDR/Version.hpp>
+
+#include "conversions.hpp"
+#include "device_commands.hpp"
+#include "stream_commands.hpp"
 
 #include <string>
+#include <unordered_map>
+#include <functional>
 #include <memory>
 
 using namespace matlab::data;
@@ -12,33 +19,40 @@ using matlab::mex::ArgumentList;
 
 class MexFunction : public matlab::mex::Function {
 public:
-    void operator()(ArgumentList outputs, ArgumentList inputs) override {
-        ArrayFactory factory;
-        std::shared_ptr<matlab::engine::MATLABEngine> engine =
-            getEngine();
-
-        validateInputs(inputs, engine, factory);
-
-        std::string command = getCommand(inputs);
-
-        if (command == "enumerate") {
-            outputs[0] = doEnumerate(factory);
-        } else {
-            throwError(engine, factory,
-                "soapysdr:mex:InvalidOperation",
-                "Unknown MEX operation: " + command);
-        }
+    MexFunction() {
+        initCommandTable();
     }
 
-private:
-    void validateInputs(
-            ArgumentList& inputs,
-            std::shared_ptr<matlab::engine::MATLABEngine>& engine,
-            ArrayFactory& factory) {
-        if (inputs.size() != 1) {
+    ~MexFunction() {
+        for (auto& entry : streamRegistry_) {
+            try {
+                auto devIt = deviceRegistry_.find(entry.second.deviceId);
+                if (devIt != deviceRegistry_.end() && devIt->second != nullptr) {
+                    devIt->second->closeStream(entry.second.stream);
+                }
+            } catch (...) {
+                // Best-effort cleanup; never throw from destructor.
+            }
+        }
+        streamRegistry_.clear();
+        for (auto& entry : deviceRegistry_) {
+            try {
+                SoapySDR::Device::unmake(entry.second);
+            } catch (...) {
+                // Best-effort cleanup; never throw from destructor.
+            }
+        }
+        deviceRegistry_.clear();
+    }
+
+    void operator()(ArgumentList outputs, ArgumentList inputs) override {
+        ArrayFactory factory;
+        auto engine = getEngine();
+
+        if (inputs.size() < 1) {
             throwError(engine, factory,
                 "soapysdr:mex:InvalidInput",
-                "Expected exactly one input argument "
+                "Expected at least one input argument "
                 "(operation name).");
         }
         if (inputs[0].getType() != ArrayType::MATLAB_STRING) {
@@ -51,54 +65,178 @@ private:
                 "soapysdr:mex:InvalidInput",
                 "Operation name must be a string scalar.");
         }
-    }
 
-    std::string getCommand(ArgumentList& inputs) {
-        StringArray commandArray = inputs[0];
-        std::u16string u16cmd = commandArray[0];
-        return std::string(u16cmd.begin(), u16cmd.end());
-    }
+        std::string command = toStdString(inputs[0]);
 
-    Array doEnumerate(ArrayFactory& factory) {
-        size_t length = 0;
-        SoapySDRKwargs* deviceList =
-            SoapySDRDevice_enumerate(nullptr, &length);
-
-        if (deviceList == nullptr && length > 0) {
-            auto engine = getEngine();
+        auto it = commandTable_.find(command);
+        if (it == commandTable_.end()) {
             throwError(engine, factory,
-                "soapysdr:mex:EnumerationFailed",
-                "SoapySDR device enumeration failed.");
+                "soapysdr:mex:InvalidOperation",
+                "Unknown MEX operation: " + command);
         }
 
-        CellArray result = factory.createCellArray({1, length});
+        try {
+            it->second(outputs, inputs, factory, engine);
+        } catch (const std::exception& e) {
+            throwError(engine, factory,
+                "soapysdr:SoapyError", e.what());
+        }
+    }
 
-        for (size_t i = 0; i < length; i++) {
-            SoapySDRKwargs& kwargs = deviceList[i];
-            size_t numKeys = kwargs.size;
+private:
+    std::unordered_map<std::string, HandlerFn> commandTable_;
+    std::unordered_map<uint64_t, SoapySDR::Device*> deviceRegistry_;
+    uint64_t nextDeviceId_ = 1;
+    StreamRegistryT streamRegistry_;
+    uint64_t nextStreamId_ = 1;
 
-            StringArray kvPairs =
-                factory.createArray<MATLABString>({numKeys, 2});
+    void initCommandTable() {
+        commandTable_["enumerate"] =
+            [this](auto& out, auto& in, auto& f, auto& e) {
+                doEnumerate(out, f);
+            };
 
-            for (size_t k = 0; k < numKeys; k++) {
-                std::string key(kwargs.keys[k]);
-                std::string val(kwargs.vals[k]);
-                kvPairs[k][0] = MATLABString(
-                    std::u16string(key.begin(), key.end()));
-                kvPairs[k][1] = MATLABString(
-                    std::u16string(val.begin(), val.end()));
+        commandTable_["getAPIVersion"] =
+            [](auto& out, auto& in, auto& f, auto& e) {
+                out[0] = f.createScalar(SoapySDR::getAPIVersion());
+            };
+
+        commandTable_["getABIVersion"] =
+            [](auto& out, auto& in, auto& f, auto& e) {
+                out[0] = f.createScalar(SoapySDR::getABIVersion());
+            };
+
+        commandTable_["getLibVersion"] =
+            [](auto& out, auto& in, auto& f, auto& e) {
+                out[0] = f.createScalar(SoapySDR::getLibVersion());
+            };
+
+        commandTable_["make"] =
+            [this](auto& out, auto& in, auto& f, auto& e) {
+                doMake(out, in, f, e);
+            };
+
+        commandTable_["unmake"] =
+            [this](auto& out, auto& in, auto& f, auto& e) {
+                doUnmake(in, f, e);
+            };
+
+        registerDeviceCommands(commandTable_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e) {
+                return getDevice(id, f, e);
+            });
+
+        registerStreamCommands(commandTable_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e) {
+                return getDevice(id, f, e);
+            },
+            streamRegistry_,
+            nextStreamId_,
+            [this](uint64_t id, ArrayFactory& f, EnginePtrT& e)
+                    -> StreamInfo& {
+                return getStream(id, f, e);
+            });
+    }
+
+    void doEnumerate(ArgumentList& outputs, ArrayFactory& factory) {
+        SoapySDR::KwargsList devices = SoapySDR::Device::enumerate();
+
+        CellArray result = factory.createCellArray(
+            {1, devices.size()});
+
+        for (size_t i = 0; i < devices.size(); i++) {
+            result[0][i] = kwargsToMatlab(factory, devices[i]);
+        }
+
+        outputs[0] = result;
+    }
+
+    void doMake(
+            ArgumentList& outputs,
+            ArgumentList& inputs,
+            ArrayFactory& factory,
+            EnginePtrT& engine) {
+        if (inputs.size() < 2) {
+            throwError(engine, factory,
+                "soapysdr:mex:InvalidInput",
+                "make requires a kwargs argument.");
+        }
+
+        SoapySDR::Kwargs kwargs = toKwargs(inputs[1]);
+        SoapySDR::Device* dev = SoapySDR::Device::make(kwargs);
+
+        if (dev == nullptr) {
+            throwError(engine, factory,
+                "soapysdr:mex:MakeFailed",
+                "SoapySDR::Device::make returned null.");
+        }
+
+        uint64_t id = nextDeviceId_++;
+        deviceRegistry_[id] = dev;
+        outputs[0] = factory.createScalar(id);
+    }
+
+    void doUnmake(
+            ArgumentList& inputs,
+            ArrayFactory& factory,
+            EnginePtrT& engine) {
+        if (inputs.size() < 2) {
+            throwError(engine, factory,
+                "soapysdr:mex:InvalidInput",
+                "unmake requires a device handle.");
+        }
+
+        uint64_t id = toUint64(inputs[1]);
+        auto it = deviceRegistry_.find(id);
+        if (it == deviceRegistry_.end()) {
+            throwError(engine, factory,
+                "soapysdr:InvalidDevice",
+                "Invalid device handle.");
+        }
+
+        // Close all streams belonging to this device
+        for (auto sIt = streamRegistry_.begin();
+                sIt != streamRegistry_.end(); ) {
+            if (sIt->second.deviceId == id) {
+                it->second->closeStream(sIt->second.stream);
+                sIt = streamRegistry_.erase(sIt);
+            } else {
+                ++sIt;
             }
-
-            result[0][i] = kvPairs;
         }
 
-        SoapySDRKwargsList_clear(deviceList, length);
+        SoapySDR::Device::unmake(it->second);
+        deviceRegistry_.erase(it);
+    }
 
-        return result;
+    SoapySDR::Device* getDevice(
+            uint64_t id,
+            ArrayFactory& factory,
+            EnginePtrT& engine) {
+        auto it = deviceRegistry_.find(id);
+        if (it == deviceRegistry_.end()) {
+            throwError(engine, factory,
+                "soapysdr:InvalidDevice",
+                "Invalid device handle.");
+        }
+        return it->second;
+    }
+
+    StreamInfo& getStream(
+            uint64_t id,
+            ArrayFactory& factory,
+            EnginePtrT& engine) {
+        auto it = streamRegistry_.find(id);
+        if (it == streamRegistry_.end()) {
+            throwError(engine, factory,
+                "soapysdr:InvalidStream",
+                "Invalid stream handle.");
+        }
+        return it->second;
     }
 
     void throwError(
-            std::shared_ptr<matlab::engine::MATLABEngine>& engine,
+            EnginePtrT& engine,
             ArrayFactory& factory,
             const std::string& id,
             const std::string& message) {
