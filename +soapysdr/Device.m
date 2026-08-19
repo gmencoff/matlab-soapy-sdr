@@ -743,7 +743,7 @@ function [backend] = parseConstructorArgs(varargin)
             kwargs(i, 2) = string(vals{i});
         end
     else
-        kwargs = [];
+        kwargs = strings(0, 2);
     end
 
     if beInjected
