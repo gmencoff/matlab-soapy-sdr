@@ -642,6 +642,12 @@ public:
                     buf[2 * i + 1] = static_cast<int16_t>(
                         -(int)(i + 1));
                 }
+            } else if (state->format == "CS8") {
+                auto* buf = reinterpret_cast<int8_t*>(buffs[ch]);
+                for (size_t i = 0; i < numElems; i++) {
+                    buf[2 * i] = static_cast<int8_t>(i + 1);
+                    buf[2 * i + 1] = static_cast<int8_t>(-(int)(i + 1));
+                }
             }
         }
         return static_cast<int>(numElems);
