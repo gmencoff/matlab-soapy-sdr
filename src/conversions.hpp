@@ -87,7 +87,7 @@ inline Array kwargsToMatlab(
 inline int directionToSoapy(const std::string& dir) {
     if (dir == "RX") return SOAPY_SDR_RX;
     if (dir == "TX") return SOAPY_SDR_TX;
-    return -1;
+    throw std::invalid_argument("Direction must be \"RX\" or \"TX\".");
 }
 
 // --- Range conversions ---
