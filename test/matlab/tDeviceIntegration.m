@@ -57,6 +57,20 @@ classdef tDeviceIntegration < matlab.unittest.TestCase
             testCase.addTeardown(@delete, dev);
             testCase.verifyEqual(dev.getDriverKey(), "matlab_test");
         end
+
+        function multipleDevicesCoexist(testCase)
+            dev1 = soapysdr.Device( ...
+                driver="matlab_test", serial="TEST001");
+            dev2 = soapysdr.Device( ...
+                driver="matlab_test", serial="TEST002");
+            testCase.addTeardown(@delete, dev1);
+            testCase.addTeardown(@delete, dev2);
+
+            info1 = dev1.getHardwareInfo();
+            info2 = dev2.getHardwareInfo();
+            testCase.verifyEqual(info1("serial"), "TEST001");
+            testCase.verifyEqual(info2("serial"), "TEST002");
+        end
     end
 
 end
