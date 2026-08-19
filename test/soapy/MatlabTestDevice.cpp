@@ -3,6 +3,50 @@
 
 #include <string>
 #include <vector>
+#include <map>
+
+class MatlabTestDevice : public SoapySDR::Device {
+public:
+    MatlabTestDevice(const SoapySDR::Kwargs& args) {
+        if (args.count("serial")) {
+            serial_ = args.at("serial");
+        }
+    }
+
+    // --- Identification ---
+
+    std::string getDriverKey() const override {
+        return "matlab_test";
+    }
+
+    std::string getHardwareKey() const override {
+        return "matlab_test_hw";
+    }
+
+    SoapySDR::Kwargs getHardwareInfo() const override {
+        SoapySDR::Kwargs info;
+        info["serial"] = serial_;
+        info["firmware"] = "1.0.0";
+        info["platform"] = "test";
+        return info;
+    }
+
+    // --- Channels ---
+
+    size_t getNumChannels(const int direction) const override {
+        if (direction == SOAPY_SDR_RX) return 2;
+        if (direction == SOAPY_SDR_TX) return 1;
+        return 0;
+    }
+
+    bool getFullDuplex(
+            const int, const size_t) const override {
+        return true;
+    }
+
+private:
+    std::string serial_ = "UNKNOWN";
+};
 
 static std::vector<SoapySDR::Kwargs> findMatlabTestDevices(
         const SoapySDR::Kwargs&) {
@@ -24,8 +68,8 @@ static std::vector<SoapySDR::Kwargs> findMatlabTestDevices(
 }
 
 static SoapySDR::Device* makeMatlabTestDevice(
-        const SoapySDR::Kwargs&) {
-    return nullptr;
+        const SoapySDR::Kwargs& args) {
+    return new MatlabTestDevice(args);
 }
 
 static SoapySDR::Registry registerMatlabTest(
