@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-test-package:
     runs-on: windows-latest
@@ -92,7 +95,6 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.version.outputs.is_release == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*.mltbx
-          generate_release_notes: true
